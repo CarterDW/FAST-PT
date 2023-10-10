@@ -35,7 +35,7 @@
 from __future__ import division
 from __future__ import print_function
 
-from .info import __version__
+from info import __version__
 
 import numpy as np
 from numpy.fft import fft, ifft, rfft, irfft, fftfreq
@@ -43,18 +43,19 @@ from numpy import exp, log, log10, cos, sin, pi, cosh, sinh, sqrt
 from scipy.special import gamma
 from scipy.signal import fftconvolve
 import scipy.integrate as integrate
-from .fastpt_extr import p_window, c_window, pad_left, pad_right
-from .matter_power_spt import P_13_reg, Y1_reg_NL, Y2_reg_NL
-from .initialize_params import scalar_stuff, tensor_stuff
-from .IA_tt import IA_tt
-from .IA_ABD import IA_A, IA_DEE, IA_DBB, P_IA_B
-from .IA_ta import IA_deltaE1, P_IA_deltaE2, IA_0E0E, IA_0B0B
-from .OV import OV
-from .kPol import kPol
-from .RSD import RSDA, RSDB
-from . import RSD_ItypeII
-from .P_extend import k_extend
-from . import FASTPT_simple as fastpt_simple
+from fastpt_extr import p_window, c_window, pad_left, pad_right
+from matter_power_spt import P_13_reg, Y1_reg_NL, Y2_reg_NL
+from initialize_params import scalar_stuff, tensor_stuff
+from IA_tt import IA_tt
+from IA_ABD import IA_A, IA_DEE, IA_DBB, P_IA_B
+from IA_ta import IA_deltaE1, P_IA_deltaE2, IA_0E0E, IA_0B0B
+from OV import OV
+from kPol import kPol
+from RSD import RSDA, RSDB
+import RSD_ItypeII
+from P_extend import k_extend
+import FASTPT_simple as fastpt_simple
+from IA_der import IA_der
 import pdb
 
 ## WHEN DOES THE IMPORT STEP OCCUR? DO WE WANT TO MOVE SOME OF THESE TO THE INITIALIZATION BLOCK TO SAVE TIME ON LIGHT RUNS?
@@ -519,8 +520,8 @@ class FASTPT:
         FQs2 = (-4./15.)*j000 + (20./21.)*j002 - (24./35.)*j004
 
 
-        FR1 = cleft_Z1(self.k_old, Ps)
-        FR2 = cleft_Z2(self.k_old, Ps)
+        #FR1 = cleft_Z1(self.k_old, Ps)
+        #FR2 = cleft_Z2(self.k_old, Ps)
 
         # ipdb.set_trace()
 
@@ -531,10 +532,10 @@ class FASTPT:
             _, FQ5_ep = self.EK.PK_original(FQ5)
             _, FQ8_ep = self.EK.PK_original(FQ8)
             _, FQs2_ep = self.EK.PK_original(FQs2)
-            _, FR1_ep = self.EK.PK_original(FR1)
-            _, FR2_ep = self.EK.PK_original(FR2)
+            #_, FR1_ep = self.EK.PK_original(FR1)
+            #_, FR2_ep = self.EK.PK_original(FR2)
 
-        return FQ1_ep,FQ2_ep,FQ5_ep,FQ8_ep,FQs2_ep,FR1_ep,FR2_ep,self.k_old,FR1,FR2
+        return FQ1_ep,FQ2_ep,FQ5_ep,FQ8_ep,FQs2_ep,self.k_old #,FR1_ep,FR2_ep,self.k_old,FR1,FR2
 
     def IA_tt(self, P, P_window=None, C_window=None):
 
@@ -588,6 +589,21 @@ class FASTPT:
         return 2. * P_deltaE1, 2. * P_deltaE2, P_0E0E, P_0B0B
 
     ## eq 12 (line 2); eq 12 (line 3); eq 15 EE; eq 15 BB
+    
+    def IA_der(self, P, P_window=None, C_window=None):
+        if (P_window != None):
+                # window the input power spectrum, so that at high and low k
+                # the signal smoothly tappers to zero. This make the input
+                # more "like" a periodic signal
+
+                if (self.verbose):
+                    print('windowing biased power spectrum')
+                W = p_window(self.k_old, P_window[0], P_window[1])
+                P = P * W
+        P_der = self.k_old**2*P
+        
+        return P_der
+        
 
     def OV(self, P, P_window=None, C_window=None):
         P, A = self.J_k_tensor(P, self.X_OV, P_window=P_window, C_window=C_window)
@@ -862,7 +878,7 @@ if __name__ == "__main__":
 
     # load the data file
 
-    d = np.loadtxt('Pk_test.dat')
+    d = np.loadtxt('/home/carterw/FAST-PT/paper/Pk_test.dat')
     # declare k and the power spectrum
     k = d[:, 0];
     P = d[:, 1]
@@ -888,7 +904,7 @@ if __name__ == "__main__":
     t2 = time()
     # calculate 1loop SPT (and time the operation)
     # P_spt=fastpt.one_loop_dd(P,C_window=C_window)
-    P_lpt = fpt.one_loop_dd_bias_lpt(P, C_window=C_window)
+    P_lpt = fpt.one_loop_dd_bias_lpt_NL(P, C_window=C_window)
 
     # for M = 10**14 M_sun/h
     b1L = 1.02817
