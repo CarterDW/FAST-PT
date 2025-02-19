@@ -659,7 +659,7 @@ class FASTPT:
         P_S2he, A = self.J_k_tensor(P, self.X_IA_gb2_S2he, P_window=P_window, C_window=C_window)
         if (self.extrap):
             _, P_S2he = self.EK.PK_original(P_S2he)
-        P_s2E=P_S2F2+2*P_13S2F2
+        P_s2E=P_S2F2
         P_s20E=P_S2fe
         P_s2E2=P_S2he
         return 2*P_s2E, 2*P_s20E, 2*P_s2E2
